@@ -47,6 +47,9 @@ header{background:var(--navy)}
 .card:hover{transform:translateY(-3px)}
 .photo{height:170px;position:relative;background:linear-gradient(160deg,#7CC0EA 0%,#3A9AD9 55%,#1A4468 100%);display:flex;align-items:flex-end;padding:14px 16px;color:#fff}
 .photo svg{position:absolute;right:-10px;top:26px;width:78%;opacity:.95}
+.photo .pic{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.photo .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(18,50,77,.35) 0%,rgba(18,50,77,0) 35%,rgba(18,50,77,0) 55%,rgba(18,50,77,.75) 100%)}
+.photo .tag,.photo .dir,.photo h3{z-index:2}
 .photo .tag{position:absolute;top:12px;left:14px;background:rgba(18,50,77,.55);backdrop-filter:blur(4px);font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;border-radius:999px}
 .photo .dir{position:absolute;top:12px;right:14px;background:#fff;color:var(--navy);font-size:.72rem;font-weight:600;padding:5px 10px;border-radius:999px}
 .photo h3{position:relative;font-size:1.15rem;text-shadow:0 1px 6px rgba(18,50,77,.4)}
@@ -178,7 +181,7 @@ function render(){
   const list=FLIGHTS.filter(f=>inCity(f)&&(dir==="all"||dirOf(f)===dir)&&(cat==="all"||f.cat===cat)).sort((a,b)=>a.date.localeCompare(b.date));
   document.getElementById("grid").innerHTML=list.map((f,i)=>`
    <article class="card">
-     <div class="photo"><span class="tag">${f.cat}</span><span class="dir">${label(f)}</span>${JET}<h3>${f.model}</h3></div>
+     <div class="photo"><span class="tag">${f.cat}</span><span class="dir">${label(f)}</span>${JET}${f.img?`<img class="pic" src="${f.img}" alt="${f.model}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"><div class="shade"></div>`:""}<h3>${f.model}</h3></div>
      <div class="body">
        <div class="route"><div class="city"><b>${f.from[0]}</b><span>${f.from[1]}</span></div><div class="arrow">→</div><div class="city to"><b>${f.to[0]}</b><span>${f.to[1]}</span></div></div>
        <div class="facts"><span><b>${fmt(f.date)}</b></span><span>Up to <b>${f.seats}</b> passengers</span></div>
