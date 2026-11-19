@@ -1,0 +1,26 @@
+name: Update empty legs
+
+on:
+  schedule:
+    - cron: "17 11 * * *"   # every day around 5:17 AM Austin time
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Fetch flights
+        run: node scripts/fetch.mjs
+      - name: Commit if changed
+        run: |
+          git config user.name "vauclair-bot"
+          git config user.email "flights@vauclair-aviation.com"
+          git add flights.json
+          git diff --cached --quiet && echo "No change" || (git commit -m "Daily empty legs update" && git push)
