@@ -173,15 +173,17 @@ footer{background:var(--navy);color:#aeb9c4;font-size:.8rem;padding:30px 0;line-
     <h3>Request this flight</h3>
     <div class="sum" id="sum"></div>
     <form id="form">
-      <div class="row2"><div><label>First name</label><input required></div><div><label>Last name</label><input required></div></div>
-      <label>Email</label><input type="email" required>
-      <label>Phone</label><input type="tel" required>
-      <div class="row2"><div><label>Passengers</label><select id="pax"></select></div><div><label>Language</label><select><option>English</option><option>Français</option></select></div></div>
-      <label>Notes</label><textarea rows="2" placeholder="Luggage, pets, flexible dates..."></textarea>
-      <button class="btn" style="width:100%;margin-top:16px" type="submit">Send my request</button>
+      <div class="row2"><div><label>First name</label><input name="first_name" required></div><div><label>Last name</label><input name="last_name" required></div></div>
+      <label>Email</label><input type="email" name="email" required>
+      <label>Phone</label><input type="tel" name="phone" required>
+      <div class="row2"><div><label>Passengers</label><select id="pax" name="passengers"></select></div><div><label>Language</label><select name="language"><option>English</option><option>Français</option></select></div></div>
+      <label>Notes</label><textarea name="notes" rows="2" placeholder="Luggage, pets, flexible dates..."></textarea>
+      <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" style="display:none">
+      <p id="formErr" style="display:none;color:#B42318;font-size:14px;margin:12px 0 0">Your request could not be sent. Please try again or email us at <a href="mailto:flights@vauclair-aviation.com">flights@vauclair-aviation.com</a>.</p>
+      <button class="btn" id="sendBtn" style="width:100%;margin-top:16px" type="submit">Send my request</button>
     </form>
   </div>
-  <div class="ok" id="ok"><b>✓</b><h3 style="margin:8px 0">Request received</h3><p style="color:var(--muted)">In the live version, your request will reach David directly. This mockup does not send anything.</p></div>
+  <div class="ok" id="ok"><b>✓</b><h3 style="margin:8px 0">Request received</h3><p style="color:var(--muted)">Thank you. David will contact you shortly to confirm availability and price.</p></div>
 </div></div>
 
 <script>
@@ -224,7 +226,7 @@ document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelect
 document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{document.querySelectorAll(".chip").forEach(x=>x.classList.remove("on"));b.classList.add("on");cat=b.dataset.cat;render()});
 const modal=document.getElementById("modal");
 document.getElementById("grid").addEventListener("click",e=>{
-  const b=e.target.closest("[data-i]");if(!b)return;const f=FLIGHTS[b.dataset.i];
+  const b=e.target.closest("[data-i]");if(!b)return;const f=FLIGHTS[b.dataset.i];CUR=f;
   document.getElementById("sum").innerHTML=`<b>${f.from[0]} → ${f.to[0]}</b><br>${fmt(f.date)} · ${f.model} · up to ${f.seats} passengers`;
   document.getElementById("pax").innerHTML=Array.from({length:f.seats},(_,k)=>`<option>${k+1}</option>`).join("");
   document.getElementById("formWrap").style.display="block";document.getElementById("ok").style.display="none";
@@ -232,7 +234,20 @@ document.getElementById("grid").addEventListener("click",e=>{
 });
 document.getElementById("close").onclick=()=>modal.classList.remove("open");
 modal.onclick=e=>{if(e.target===modal)modal.classList.remove("open")};
-document.getElementById("form").onsubmit=e=>{e.preventDefault();document.getElementById("formWrap").style.display="none";document.getElementById("ok").style.display="block"};
+const FORMSPREE_URL="https://formspree.io/f/mqpqqwgn";let CUR=null;
+document.getElementById("form").onsubmit=async e=>{
+  e.preventDefault();const form=e.target,btn=document.getElementById("sendBtn"),err=document.getElementById("formErr");
+  err.style.display="none";btn.disabled=true;btn.textContent="Sending...";
+  const data=Object.fromEntries(new FormData(form));
+  if(CUR){data.flight=`${CUR.from[0]} (${CUR.from[1]}) → ${CUR.to[0]} (${CUR.to[1]})`;data.flight_date=CUR.date;data.aircraft=CUR.model;data.max_seats=CUR.seats;}
+  data.source="Empty legs page";data._subject=`Empty leg request: ${data.flight||""} ${data.flight_date||""}`.trim();
+  try{
+    const r=await fetch(FORMSPREE_URL,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify(data)});
+    if(!r.ok)throw new Error(r.status);
+    form.reset();document.getElementById("formWrap").style.display="none";document.getElementById("ok").style.display="block";
+  }catch(_){err.style.display="block";}
+  finally{btn.disabled=false;btn.textContent="Send my request";}
+};
 const CAT={"Turboprop":["Pilatus","King Air","PC-12"],"Heavy jet":["Challenger 6","Challenger 8","Falcon 50","Falcon 900","Falcon 2000","Falcon 7","Falcon 8","Gulfstream G4","Gulfstream G5","Gulfstream G6","Gulfstream G7","Gulfstream GIV","Gulfstream GV","Global","Legacy","Lineage"],"Super midsize jet":["Challenger 3","Citation X","Longitude","Gulfstream G200","Gulfstream G280","Praetor 600","Legacy 450","Hawker 4000"],"Midsize jet":["Learjet 60","Citation VII","Citation VI","Citation III","Excel","XLS","Hawker 8","Hawker 9","Sovereign","Latitude","Praetor 500","Learjet 55"]};
 function catOf(m){for(const[c,list]of Object.entries(CAT))if(list.some(k=>m.includes(k)))return c;return "Light jet"}
 async function load(){
